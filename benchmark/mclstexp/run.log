@@ -1,0 +1,171 @@
+
+[FINAL CONFIG]
+{
+  "use_inception": true,
+  "image_pca_dim": 100,
+  "hvg_k": 100,
+  "gene_log1p": false,
+  "input_dim_image": 100,
+  "input_dim_transcriptome": 100,
+  "hidden_dim": 512,
+  "output_dim": 256,
+  "num_layers": 2,
+  "dropout_prob": 0.5,
+  "use_positional_embedding": false,
+  "use_positional_attention": false,
+  "use_feature_selector": false,
+  "pos_embedding_dim": 128,
+  "temperature": 0.3496,
+  "mcl_projection_dim": 256,
+  "mcl_heads_num": 4,
+  "mcl_heads_dim": 32,
+  "mcl_heads_layers": 2,
+  "n_hidden_muse": 128,
+  "dim_z_muse": 256,
+  "panel": "human-5k-panel",
+  "split": "train",
+  "batch_size": 64,
+  "num_workers": 8,
+  "pin_memory": true,
+  "img_size": 299,
+  "img_mean": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "img_std": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "use_densenet": true,
+  "streaming": true,
+  "hvg_fit_samples": 30000,
+  "eval_max_samples": 30000,
+  "stream_shuffle_buffer": 0,
+  "pca_fit_samples": 2000,
+  "out_dir": "/home/meteli/cristina/hescape/eval/mclstexp_eval_out/human-5k",
+  "train_cfg_data": "/home/meteli/cristina/MUSE_sc/config/data_config_23.json",
+  "train_cfg_model": "/home/meteli/cristina/MUSE_sc/config/model_config_23.json",
+  "checkpoint": "/home/meteli/cristina/MUSE_sc/trainings/withEmbeddings/checkpoints/mclstexp_best_23.pth",
+  "slice_field": "atlas"
+}
+[stage] opening HF dataset stream…
+  - collected 2000
+  - collected 4000
+  - collected 6000
+  - collected 8000
+  - collected 10000
+  - collected 12000
+  - collected 14000
+  - collected 16000
+  - collected 18000
+  - collected 20000
+  - collected 22000
+  - collected 24000
+  - collected 26000
+  - collected 28000
+  - collected 30000
+[pca] DenseNet features 1024 → PCA 100
+[load] missing keys: []
+[load] unexpected keys: []
+[model] mclSTExp-Attention ready.
+  - processed 320
+  - processed 640
+  - processed 960
+  - processed 1280
+  - processed 1600
+  - processed 1920
+  - processed 2240
+  - processed 2560
+  - processed 2880
+  - processed 3200
+  - processed 3520
+  - processed 3840
+  - processed 4160
+  - processed 4480
+  - processed 4800
+  - processed 5120
+  - processed 5440
+  - processed 5760
+  - processed 6080
+  - processed 6400
+  - processed 6720
+  - processed 7040
+  - processed 7360
+  - processed 7680
+  - processed 8000
+  - processed 8320
+  - processed 8640
+  - processed 8960
+  - processed 9280
+  - processed 9600
+  - processed 9920
+  - processed 10240
+  - processed 10560
+  - processed 10880
+  - processed 11200
+  - processed 11520
+  - processed 11840
+  - processed 12160
+  - processed 12480
+  - processed 12800
+  - processed 13120
+  - processed 13440
+  - processed 13760
+  - processed 14080
+  - processed 14400
+  - processed 14720
+  - processed 15040
+  - processed 15360
+  - processed 15680
+  - processed 16000
+  - processed 16320
+  - processed 16640
+  - processed 16960
+  - processed 17280
+  - processed 17600
+  - processed 17920
+  - processed 18240
+  - processed 18560
+  - processed 18880
+  - processed 19200
+  - processed 19520
+  - processed 19840
+  - processed 20160
+  - processed 20480
+  - processed 20800
+  - processed 21120
+  - processed 21440
+  - processed 21760
+  - processed 22080
+  - processed 22400
+  - processed 22720
+  - processed 23040
+  - processed 23360
+  - processed 23680
+  - processed 24000
+  - processed 24320
+  - processed 24640
+  - processed 24960
+  - processed 25280
+  - processed 25600
+  - processed 25920
+  - processed 26240
+  - processed 26560
+  - processed 26880
+  - processed 27200
+  - processed 27520
+  - processed 27840
+  - processed 28160
+  - processed 28480
+  - processed 28800
+  - processed 29120
+  - processed 29440
+  - processed 29760
+
+=== HESCAPE Retrieval (human-5k-panel / train) ===
+I2G  R@1=0.000  R@5=0.000  R@10=0.000
+G2I  R@1=0.000  R@5=0.000  R@10=0.000
+[sanity] {'n_names': 30016, 'n_img': 30016, 'n_tx': 30016, 'n_labels': 30016}
+[export] embeddings/labels salvati in: /home/meteli/cristina/hescape/eval/mclstexp_eval_out/human-5k

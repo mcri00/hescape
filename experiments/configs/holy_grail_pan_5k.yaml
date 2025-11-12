@@ -57,16 +57,16 @@ hydra:
     name: human_pan_5k_panel
   sweeper:
     params:
-      model.litmodule.img_enc_name: h0-mini, gigapath, conch, ctranspath, uni
+      model.litmodule.img_enc_name: gigapath, conch, ctranspath, uni #, h0-mini,
       model.litmodule.img_finetune: true #, true  # Lora finetune
       model.litmodule.img_proj: mlp #, mlp # linear # transformer
-      model.litmodule.gene_enc_name: scFoundation #nicheformer, generic, drvi
+      model.litmodule.gene_enc_name:  nicheformer, generic, drvi #scFoundation,
       model.litmodule.gene_finetune: false # lora or full fine-tune
       model.litmodule.gene_proj: linear # mlp
       model.litmodule.loss: CLIP # SIGLIP
       model.litmodule.temperature: 0.07 # 0.5
       datamodule.seed: 24442 , 422244, 42424244
-      datamodule.batch_size: 64 #, 256 #, 1024
-      datamodule.num_workers: 4
+      datamodule.batch_size: 256  #, 1024, 64
+      datamodule.num_workers: 8
       training.train: true
-      training.test: false
+      training.test: true

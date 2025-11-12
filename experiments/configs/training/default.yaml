@@ -50,9 +50,3 @@ logger:
     save_dir: ${paths.anatomy.output}/csv_logger
     name: ""
     prefix: ""
-  wandb:
-    _target_: pytorch_lightning.loggers.wandb.WandbLogger
-    save_dir: ${paths.anatomy.output}/wandb_logger
-    log_model: False
-    project: "clip_pretrain"
-    name: null

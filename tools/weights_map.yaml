@@ -1,0 +1,41 @@
+# tools/weights_map.yaml
+root_dir: pretrain_weights
+
+image:
+  ctranspath:
+    hf_repo: null
+    include: ["*.pth", "*.pt", "*.bin"]
+    # link ufficiale dal repo TransPath (Google Drive)
+    direct_urls:
+      - url: "https://drive.google.com/uc?export=download&id=1DoDx_70_TLj98gTf6YTXnu4tFhsFocDX"
+        filename: "ctranspath_base.pth"
+  conch:
+    hf_repo: "MahmoodLab/CONCH"
+    include: ["*.bin","*.pth","*.pt","*.safetensors"]
+
+  conch_v1_5:
+    hf_repo: "MahmoodLab/conchv1_5"
+    include: ["*.bin","*.pth","*.pt","*.safetensors"]
+
+  gigapath:
+    hf_repo: "prov-gigapath/prov-gigapath"
+    include: ["*.bin","*.pth","*.pt","*.safetensors"]
+
+  h0-mini:
+    hf_repo: "bioptimus/H0-mini"
+    include: ["*.bin","*.pth","*.pt","*.safetensors"]
+
+  uni:
+    hf_repo: "MahmoodLab/UNI"
+    include: ["*.bin","*.pth","*.pt","*.safetensors"]
+
+
+gene:
+  nicheformer:
+    hf_repo: "theislab/Nicheformer"
+    include: ["*.safetensors","*.bin","*.pt","*.pth","*model*","*pytorch*"]
+
+  scfoundation:
+    hf_repo: "genbio-ai/scFoundation"    # open
+    include: ["*.pth","*.pt","*.bin","*.safetensors","*.ckpt"]
+    direct_urls: []

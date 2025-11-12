@@ -15,7 +15,16 @@ import faulthandler
 
 from pytorch_lightning import seed_everything
 
+from omegaconf import open_dict
+
+
+
+
+
+
+#start of original version
 faulthandler.enable()
+
 
 
 def train(cfg: DictConfig) -> None:
@@ -54,6 +63,7 @@ def train(cfg: DictConfig) -> None:
     model = model(lambda_scheduler=lr_lambda, cfg=cfg)
 
     hescape_logger.info("Instantiating callbacks and logger...")
+    '''
     callbacks: list[Callback] = []
     for _, cb in cfg.training.callbacks.items():
         callbacks.append(hydra.utils.instantiate(cb))
@@ -68,6 +78,33 @@ def train(cfg: DictConfig) -> None:
     hescape_logger.info("Instantiating trainer...")
     trainer: Trainer = hydra.utils.instantiate(cfg.training.lightning.trainer)
     trainer = trainer(callbacks=callbacks, logger=logger)
+    '''
+    #new version for no wandb
+    # --- build callbacks ---
+    callbacks: list[Callback] = []
+    for _, cb in cfg.training.callbacks.items():
+        callbacks.append(hydra.utils.instantiate(cb))
+    callbacks.append(ClampCallback())
+
+    # --- build loggers (skip None / missing _target_) ---
+    loggers: list[Logger] = []
+    if "logger" in cfg.training and cfg.training.logger is not None:
+        for _, lg in cfg.training.logger.items():
+            if lg is None:
+                continue
+            if isinstance(lg, dict) and "_target_" not in lg:
+                continue
+            lgr = hydra.utils.instantiate(lg)
+            if lgr is not None:
+                loggers.append(lgr)
+
+    # --- trainer ---
+    trainer_cfg = cfg.training.lightning.trainer
+    trainer: Trainer = hydra.utils.instantiate(trainer_cfg)
+    # If no loggers, pass False to fully disable logging in PL
+    trainer = trainer(callbacks=callbacks, logger=(loggers if len(loggers) > 0 else False))
+
+
     if cfg.training.train:
         hescape_logger.info("Training...")
         trainer.fit(
@@ -121,6 +158,7 @@ def main(cfg: DictConfig) -> None:
     # set seed for reproducibility
     seed_everything(seed, workers=True)
 
+    '''
     try:
         job_id = f"{HydraConfig.get().job.id}"  # _{HydraConfig.get().job.num}"
     except Exception:
@@ -128,6 +166,22 @@ def main(cfg: DictConfig) -> None:
     wandb_name = f"{job_id}"  # -{img_enc_name}-{img_proj}-{gene_enc_name}-{gene_proj}-{seed}-{loss}"
     cfg.training.logger.wandb.name = wandb_name
     cfg.paths.anatomy.output = f"{cfg.paths.anatomy.output}/{wandb_name}"
+    '''
+    #new for no wandb logging
+    try:
+        job_id = f"{HydraConfig.get().job.id}"
+    except Exception:
+        job_id = "local"
+    run_name = f"{job_id}"
+
+    # Always update the output path
+    cfg.paths.anatomy.output = f"{cfg.paths.anatomy.output}/{run_name}"
+
+    # Only set wandb name if wandb logger is present
+    if "logger" in cfg.training and cfg.training.logger is not None and "wandb" in cfg.training.logger and cfg.training.logger.wandb is not None:
+        cfg.training.logger.wandb.name = run_name
+
+
 
     pprint(OmegaConf.to_container(cfg, resolve=True))
     train(cfg)

@@ -1,0 +1,15 @@
+{
+  "panel": "human-5k-panel",
+  "split": "train",
+  "checkpoint": "mclstexp_best_23.pth",
+  "n_samples": 30016,
+  "hvg_k": 100,
+  "input_dim_image": 100,
+  "input_dim_transcriptome": 100,
+  "i2g_R@1": 0.0,
+  "i2g_R@5": 0.00016657782543916255,
+  "i2g_R@10": 0.0004331023374106735,
+  "g2i_R@1": 0.0,
+  "g2i_R@5": 0.0001332622632617131,
+  "g2i_R@10": 0.00036647121305577457
+}

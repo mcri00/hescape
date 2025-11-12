@@ -104,6 +104,12 @@ class GexpEncoder(nn.Module):
         elif model_name == "generic":
             trunk = GenericEncoder(num_input=self.input_genes, num_layer=3, embed_dim=self.embed_dim)
             num_features = self.embed_dim
+        
+        elif model_name == "identity":
+            trunk = IdentityTrunk(num_features=self.input_genes)  # self.input_genes=100
+            num_features = self.input_genes
+            print(f"Successfully built identity encoder with num_features={num_features}")
+
 
         else:
             raise ValueError(f"Unknown model name: {model_name}")
@@ -208,6 +214,15 @@ class GexpEncoder(nn.Module):
             x = torch.cat([x, tissue], dim=1)
         x = self.head(x)
         return x
+
+# --- in testa al file ---
+class IdentityTrunk(nn.Module):
+    def __init__(self, num_features: int):
+        super().__init__()
+        self.num_features = num_features  # ESPOSTO per il DualHeadMLP
+    def forward(self, x):
+        # x può arrivare come (B, G) o (B,1,G) → strizza a (B,G)
+        return x.squeeze(1) if x.dim() == 3 else x
 
 
 class GenericEncoder(nn.Module):

@@ -1,0 +1,30 @@
+#precomputed_dir: /home/meteli/cristina/hescape/_cache_exports/human-5k-panel/test_subset__8ce116fba2
+#precomputed_dir: /home/meteli/cristina/hescape/_cache_exports/human-breast-panel/test_subset__db5f205345
+#precomputed_dir: /home/meteli/cristina/hescape/_cache_exports/human-colon-panel/test_subset__01925bd4ca
+#precomputed_dir: /home/meteli/cristina/hescape/_cache_exports/human-immuno-oncology-panel/test_subset__41f0185f14
+precomputed_dir: /home/meteli/cristina/hescape/_cache_exports/human-multi-tissue-panel/test_subset__6622957949
+#precomputed_dir: /home/meteli/cristina/hescape/_cache_exports/human-lung-healthy-panel/test_subset__d3cb3f4209
+
+checkpoint: /home/meteli/cristina/MUSE_sc/trainings/withEmbeddings/checkpoints/mucst_best_27_new.pth
+
+#out_dir: /home/meteli/cristina/hescape/eval/mucst_eval_out/human-5k-strat-test
+#out_dir: /home/meteli/cristina/hescape/eval/mucst_eval_out/human-breast-strat-test
+#out_dir: /home/meteli/cristina/hescape/eval/mucst_eval_out/human-colon-strat-test
+#out_dir: /home/meteli/cristina/hescape/eval/mucst_eval_out/human-immOnc-strat-test
+out_dir: /home/meteli/cristina/hescape/eval/mucst_eval_out/human-multi-strat-test
+#out_dir: /home/meteli/cristina/hescape/eval/mucst_eval_out/human-lung-strat-test
+
+# Optionally derive dims/hypers from training JSONs
+train_cfg_data: /home/meteli/cristina/MUSE_sc/config/data_config_27.json
+train_cfg_model: /home/meteli/cristina/MUSE_sc/config/model_config_27.json
+
+# Must match CSV filenames
+hvg_k: 100
+pca_dim: 100        # or image_pca_dim: 100
+
+# Pick one: inception_v3 | densenet121 | resnet18
+image_encoder: resnet18
+# (or directly: image_prefix: img_resnet18_pca)
+
+gene_log1p: true
+

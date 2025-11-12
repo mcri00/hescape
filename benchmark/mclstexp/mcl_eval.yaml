@@ -1,0 +1,37 @@
+# Which panel/split to evaluate
+panel: human-5k-panel
+split: train
+
+# Stream a subset (no huge local download)
+streaming: true
+hvg_fit_samples: 30000
+eval_max_samples: 30000
+stream_shuffle_buffer: 0
+
+# Your training JSONs (to inherit things like hvg_k defaults)
+train_cfg_data: /home/meteli/cristina/MUSE_sc/config/data_config_23.json
+train_cfg_model: /home/meteli/cristina/MUSE_sc/config/model_config_23.json
+
+# ----- MODEL SWITCH -----
+
+
+# mclSTExp checkpoint + hyperparams (MUST MATCH TRAINING)
+checkpoint: /home/meteli/cristina/MUSE_sc/trainings/withEmbeddings/checkpoints/mclstexp_best_23.pth
+
+
+# Image feature extraction to match training
+use_densenet: true
+image_pca_dim: 100
+pca_fit_samples: 2000
+
+# Runtime
+batch_size: 64
+num_workers: 8
+pin_memory: true
+img_size: 299
+img_mean: [0.5, 0.5, 0.5]
+img_std:  [0.5, 0.5, 0.5]
+slice_field: atlas
+
+# Export dir (optional)
+out_dir: /home/meteli/cristina/hescape/eval/mclstexp_eval_out/human-5k

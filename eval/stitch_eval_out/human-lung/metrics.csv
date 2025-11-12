@@ -1,0 +1,3 @@
+panel,split,checkpoint,n_samples,hvg_k,input_dim_image,input_dim_transcriptome,i2g_R@1,i2g_R@5,i2g_R@10,g2i_R@1,g2i_R@5,g2i_R@10
+human-lung-healthy-panel,train,mlp_simclr_loss_func_spatial_reg_emb_pos_nosel_best_22.pth,5056,100,100,100,0.391218364238739,0.6366692781448364,0.660007894039154,0.4404667615890503,0.6228243708610535,0.6396360993385315
+human-lung-healthy-panel,train,mlp_simclr_loss_func_spatial_reg_emb_pos_nosel_best_22.pth,30016,100,100,100,0.1224680170416832,0.4258062243461609,0.5477079153060913,0.204624205827713,0.4683168828487396,0.5477744936943054

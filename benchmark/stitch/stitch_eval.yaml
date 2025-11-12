@@ -1,0 +1,40 @@
+# quale pannello/split
+panel: human-5k-panel
+#panel: human-breast-panel
+split: train
+test_ids_file: /home/meteli/cristina/hescape/benchmark/test_sets_ID/human-5k-test1.csv   # must have a column named 'id'
+#test_ids_file: /home/meteli/cristina/hescape/benchmark/test_sets_ID/human-breast-test.csv
+id_field: name                                 # optional; auto-detected if omitted
+
+
+# streaming per non scaricare tutto
+streaming: false
+hvg_fit_samples: 0
+eval_max_samples: 0
+stream_shuffle_buffer: 0   # puoi mettere 5000 per un po' di shuffle
+
+# i tuoi JSON di training
+train_cfg_data: /home/meteli/cristina/MUSE_sc/config/data_config_22.json
+train_cfg_model: /home/meteli/cristina/MUSE_sc/config/model_config_22.json
+
+# checkpoint da valutare
+checkpoint: /home/meteli/cristina/MUSE_sc/trainings/withEmbeddings/checkpoints/mlp_simclr_loss_func_spatial_reg_emb_pos_nosel_best_22_new.pth
+
+cache_root: /home/meteli/cristina/hescape/_cache 
+
+
+# to apply model direclty to images
+use_inception: true
+image_pca_dim: 100
+pca_fit_samples: 2000 
+# runtime (facoltativo)
+batch_size: 64
+num_workers: 8
+pin_memory: true
+img_size: 299
+img_mean: [0.5, 0.5, 0.5]
+img_std:  [0.5, 0.5, 0.5]
+slice_field: atlas
+
+# export (facoltativo)
+out_dir: /home/meteli/cristina/hescape/eval/stitch_eval_out/human-5k-strat-test

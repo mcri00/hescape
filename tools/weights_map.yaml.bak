@@ -1,0 +1,40 @@
+# tools/weights_map.yaml
+root_dir: pretrain_weights
+
+image:
+  ctranspath:
+    hf_repo: null
+    include: ["*.pth","*.pt","*.bin"]
+    # link ufficiale dal repo TransPath (Google Drive); se hai un mirror HF affidabile puoi metterlo qui
+    direct_urls:
+      - "https://drive.google.com/uc?export=download&id=1DoDx_70_TLj98gTf6YTXnu4tFhsFocDX"
+  conch:
+    hf_repo: "MahmoodLab/CONCH"          # gated: richiedi accesso su HF
+    include: ["*.pth","*.pt","*.bin","*.safetensors"]
+    direct_urls: []
+  conch_v1_5:
+    hf_repo: "MahmoodLab/conchv1_5"      # alternativa specifica (gated)
+    include: ["*.pth","*.pt","*.bin","*.safetensors"]
+    direct_urls: []
+  gigapath:
+    hf_repo: "prov-gigapath/prov-gigapath"   # open-weight, ma spesso serve token HF
+    include: ["*.pth","*.pt","*.bin","*.safetensors"]
+    direct_urls: []
+  h0-mini:
+    hf_repo: "bioptimus/H0-mini"         # open
+    include: ["*.pth","*.pt","*.bin","*.safetensors"]
+    direct_urls: []
+  uni:
+    hf_repo: "MahmoodLab/UNI"            # gated
+    include: ["*.pth","*.pt","*.bin","*.safetensors"]
+    direct_urls: []
+
+gene:
+  nicheformer:
+    hf_repo: "theislab/Nicheformer"      # open
+    include: ["*.pth","*.pt","*.bin","*.safetensors", "*model*", "*pytorch*"]
+    direct_urls: []
+  scfoundation:
+    hf_repo: "genbio-ai/scFoundation"    # open
+    include: ["*.pth","*.pt","*.bin","*.safetensors","*.ckpt"]
+    direct_urls: []

@@ -1,0 +1,7 @@
+[load] missing keys: []
+[load] unexpected keys: []
+[eval] encoded N=9087 samples
+
+=== Recall@k (paired) ===
+I2G  R@1=0.215  R@5=0.384  R@10=0.446
+G2I  R@1=0.248  R@5=0.393  R@10=0.444

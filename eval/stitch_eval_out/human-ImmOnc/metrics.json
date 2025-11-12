@@ -1,0 +1,15 @@
+{
+  "panel": "human-immuno-oncology-panel",
+  "split": "train",
+  "checkpoint": "mlp_simclr_loss_func_spatial_reg_emb_pos_nosel_best_22.pth",
+  "n_samples": 30016,
+  "hvg_k": 100,
+  "input_dim_image": 100,
+  "input_dim_transcriptome": 100,
+  "i2g_R@1": 0.15658316016197205,
+  "i2g_R@5": 0.45399120450019836,
+  "i2g_R@10": 0.5615338683128357,
+  "g2i_R@1": 0.22927771508693695,
+  "g2i_R@5": 0.4928038418292999,
+  "g2i_R@10": 0.5585021376609802
+}

@@ -1,0 +1,15 @@
+{
+  "panel": "human-5k-panel",
+  "split": "train",
+  "checkpoint": "mlp_simclr_loss_func_spatial_reg_emb_pos_nosel_best_22.pth",
+  "n_samples": 30016,
+  "hvg_k": 100,
+  "input_dim_image": 100,
+  "input_dim_transcriptome": 100,
+  "i2g_R@1": 0.2196495234966278,
+  "i2g_R@5": 0.5769922733306885,
+  "i2g_R@10": 0.6594815850257874,
+  "g2i_R@1": 0.26722413301467896,
+  "g2i_R@5": 0.5869869589805603,
+  "g2i_R@10": 0.6593483686447144
+}

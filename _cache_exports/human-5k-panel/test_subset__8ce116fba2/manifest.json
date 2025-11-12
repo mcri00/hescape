@@ -1,0 +1,36 @@
+{
+  "panel": "human-5k-panel",
+  "split": "train",
+  "whitelist_csv": "/home/meteli/cristina/hescape/benchmark/test_sets_ID/human-5k-test.csv",
+  "whitelist_hash": "8ce116fba2",
+  "rows": 16179,
+  "pca_dim": 100,
+  "id_field": "name",
+  "backbone": "inception_v3_logits_only",
+  "device": "cuda",
+  "pretrained": true,
+  "stop_after_misses": 1000,
+  "min_rows_per_id": 0,
+  "max_rows_per_id": 0,
+  "coord_keys": {
+    "x_key": "cell_coords",
+    "y_key": null
+  },
+  "transforms_inception": {
+    "resize": [
+      229,
+      229
+    ],
+    "centercrop": 299,
+    "normalize_mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "normalize_std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  }
+}

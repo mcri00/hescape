@@ -1,0 +1,9 @@
+[cfg] using image_prefix='img_inception_pca' (pca_dim=100)
+[MUSE load] missing keys: []
+[MUSE load] unexpected keys: []
+[model] MUSE ready.
+[eval] encoded N=9087 samples
+
+=== Retrieval (precomputed CSV) — MUSE (HESCAPE R@k) ===
+I2G  R@1=0.000  R@5=0.000  R@10=0.001
+G2I  R@1=0.000  R@5=0.001  R@10=0.001

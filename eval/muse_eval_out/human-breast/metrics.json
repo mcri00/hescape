@@ -1,0 +1,15 @@
+{
+  "panel": "human-breast-panel",
+  "split": "train",
+  "checkpoint": "muse_best_13.pth",
+  "n_samples": 30016,
+  "hvg_k": 100,
+  "input_dim_image": 100,
+  "input_dim_transcriptome": 100,
+  "i2g_R@1": 6.663113163085654e-05,
+  "i2g_R@5": 0.00019989338761661202,
+  "i2g_R@10": 0.00036647121305577457,
+  "g2i_R@1": 3.331556581542827e-05,
+  "g2i_R@5": 0.00016657782543916255,
+  "g2i_R@10": 0.0004997334908694029
+}

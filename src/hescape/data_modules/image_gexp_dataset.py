@@ -12,6 +12,7 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
 from hescape.constants import DatasetEnum
+import torch.nn as nn
 
 ENUMS = [DatasetEnum.NAME, DatasetEnum.GEXP, DatasetEnum.SOURCE, DatasetEnum.TISSUE]
 # DatasetEnum.TISSUE,
@@ -20,8 +21,40 @@ ENUMS = [DatasetEnum.NAME, DatasetEnum.GEXP, DatasetEnum.SOURCE, DatasetEnum.TIS
 # DatasetEnum.PRESERVATION_METHOD
 
 
-SELECTION = [DatasetEnum.NAME, DatasetEnum.GEXP, DatasetEnum.IMG, DatasetEnum.SOURCE, DatasetEnum.TISSUE]
+SELECTION = [DatasetEnum.NAME, DatasetEnum.GEXP, DatasetEnum.IMG, DatasetEnum.SOURCE, DatasetEnum.TISSUE, "cell_coords"]
 
+
+
+class StitchGeneTransform(nn.Module):
+    """
+    STitch-style preprocessing for genes:
+      1) Select a fixed HVG index (computed offline on TRAIN only) → (N, H).
+      2) Clamp small negatives to 0.
+      3) log1p transform.
+    Notes:
+      - Does NO re-fitting at runtime (no leakage).
+      - Returns float32 tensor (safer under mixed precision).
+    """
+    def __init__(self, hvg_index_path: str, do_log1p: bool = True, clamp_min: float = 0.0, out_dtype=torch.float32):
+        super().__init__()
+        idx = np.load(hvg_index_path)  # e.g., shape [100]
+        # register as buffer so it moves with .to(device) and is broadcast in DDP
+        self.register_buffer("idx", torch.from_numpy(idx).long(), persistent=False)
+        self.do_log1p = do_log1p
+        self.clamp_min = clamp_min
+        self.out_dtype = out_dtype
+
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
+        # X can be (N,G) or (N,1,G) from HF; squeeze to (N,G)
+        if X.dim() == 3:
+            X = X.squeeze(1)
+        # HVG select first
+        X = X.index_select(dim=1, index=self.idx)
+        # Then log1p
+        if self.do_log1p:
+            X = torch.clamp(X, min=self.clamp_min)
+            X = torch.log1p(X)
+        return X.to(self.out_dtype).contiguous()
 
 class scFoundationTransform(torch.nn.Module):
     """
@@ -229,6 +262,9 @@ class LogNormOnly(torch.nn.Module):
     """Normalizes gene expression counts per cell and applies log transformation."""
 
     def forward(self, X: torch.Tensor):
+        #new for simclr
+        # ensure no tiny negatives due to dtype conversions
+        X = torch.clamp(X, min=0)
         return torch.log1p(X)
 
 
@@ -238,7 +274,8 @@ class ApplyTransforms(torch.nn.Module):
 
         self.img_transform = transforms["img_transform"]
         self.gene_transform = transforms["gene_transform"]
-
+    '''
+    #original
     def forward(self, x):
         for i in ENUMS:
             x[i] = torch.tensor(x[i]).contiguous()
@@ -257,6 +294,39 @@ class ApplyTransforms(torch.nn.Module):
             x[DatasetEnum.GEXP] = x[DatasetEnum.GEXP].contiguous()
 
         return x
+    '''
+    #new for stitch loss
+    def forward(self, x):
+        # cast the usual enums
+        for i in ENUMS:
+            #x[i] = torch.tensor(x[i]).contiguous()
+            #new for simclr
+            x[i] = torch.as_tensor(x[i]).contiguous()
+
+
+        # --- NEW: unpack coords ---
+        if "cell_coords" in x:
+            cc = torch.as_tensor(x["cell_coords"]).float()   # [N, 2] or [N, 3]
+            if cc.ndim == 2 and cc.size(1) >= 2:
+                x["x"] = cc[:, 0].contiguous()
+                x["y"] = cc[:, 1].contiguous()
+                # if a 3rd component exists, treat it as slice index; else we’ll inject zeros later
+                if cc.size(1) >= 3:
+                    # if it’s continuous, we’ll cast to long only when we actually need a categorical id
+                    x["slice_id"] = cc[:, 2].contiguous()
+            if not isinstance(x["cell_coords"], torch.Tensor):
+                x["cell_coords"] = torch.tensor(x["cell_coords"])
+
+        # keep your existing image / gene transforms
+        if self.img_transform:
+            x[DatasetEnum.IMG] = [img.contiguous() for img in self.img_transform(x[DatasetEnum.IMG])]
+            x[DatasetEnum.IMG] = torch.stack(x[DatasetEnum.IMG]).contiguous()
+
+        if self.gene_transform:
+            x[DatasetEnum.GEXP] = self.gene_transform(x[DatasetEnum.GEXP]).contiguous()
+
+        return x
+
 
 
 # Predefined transformations for different models
@@ -337,6 +407,23 @@ TRANSFORMS = {
     "log1p_only": LogNormOnly(),
     "nicheformer": NicheformerTransform,
     "scFoundation": scFoundationTransform,
+    "stitch_gene": StitchGeneTransform,
+    "inception": T.Compose([
+        T.ToImage(),
+        T.Resize(299, antialias=True),
+        T.CenterCrop(299),
+        T.ConvertImageDtype(torch.float32),
+        T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+    ]),
+    "inception_pca100": T.Compose([
+        T.ToImage(),
+        T.Resize(299, antialias=True),   # canonical for Inception
+        T.CenterCrop(299),
+        T.ConvertImageDtype(torch.float32),
+        T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+    ]),
+
+
 }
 
 
@@ -346,8 +433,11 @@ class ImageGexpDataModule(LightningDataModule):
         dataset_path: str,
         dataset_name: str,
         data_files_path: str,
-        img_model_name: Literal["ctranspath", "densenet", "uni", "optimus", "conch", "gigapath", "h0-mini"] | str,
-        gene_model_name: Literal["drvi", "nicheformer", "scfoundation", "generic"] | str,
+        img_model_name: Literal["ctranspath", "densenet", "uni", "optimus", "conch", "gigapath", "h0-mini", "inception", "inception_pca100"] | str,
+        gene_model_name: Literal["drvi", "nicheformer", "scfoundation", "generic", "stitch_gene"] | str,
+        hvg_index_path: str | None = None,   # path assoluto al file .npy
+        hvg_dir: str | None = None,          # directory contenente i file topK_idx.npy
+        hvg_top_k: int = 100,                # K (default 100)
         source_key: str = "source",
         source_value=None,
         batch_size: int = 256,
@@ -381,6 +471,11 @@ class ImageGexpDataModule(LightningDataModule):
             split_test_value (Any, optional): Value for filtering test data based on the `split_test_key`. Defaults to None.
         """
         super().__init__()
+        
+        self.hvg_index_path = hvg_index_path
+        self.hvg_dir = hvg_dir
+        self.hvg_top_k = hvg_top_k
+        
         self.dataset_path = dataset_path
         self.dataset_name = dataset_name
         self.data_files_path = Path(data_files_path)
@@ -420,6 +515,7 @@ class ImageGexpDataModule(LightningDataModule):
         elif gene_model_name in ["generic"]:
             self.gene_transform = TRANSFORMS["default_gene"]
 
+
         elif gene_model_name in ["drvi"]:
             self.gene_transform = TRANSFORMS["log1p_only"]
 
@@ -427,6 +523,22 @@ class ImageGexpDataModule(LightningDataModule):
             self.gene_transform = TRANSFORMS["scFoundation"](
                 scFoundation_gene_index_path="/mnt/projects/hai_spatial_clip/pretrain_weights/gene/scFoundation/OS_scRNA_gene_index.19264.tsv",
                 data_gene_reference_path=self.data_gene_reference_path,
+            )
+        elif gene_model_name in ["stitch_gene"]:
+            hvg_path = self._resolve_hvg_path()
+            if not hvg_path.exists():
+                raise FileNotFoundError(
+                    f"[HVG] File non trovato: {hvg_path}\n"
+                    f"Passa un percorso valido con:\n"
+                    f"  - datamodule.hvg_index_path=/assoluto/top{self.hvg_top_k}_idx.npy\n"
+                    f"    oppure\n"
+                    f"  - datamodule.hvg_dir=/cartella_con_HVG  (userò top{self.hvg_top_k}_idx.npy)"
+                )
+            self.gene_transform = TRANSFORMS["stitch_gene"](
+                hvg_index_path=str(hvg_path),
+                do_log1p=True,
+                clamp_min=0.0,
+                out_dtype=torch.float32,
             )
 
         # Load dataset
@@ -437,6 +549,30 @@ class ImageGexpDataModule(LightningDataModule):
             split="train" # change to "full"
         )
         self.idx_all = self._filter_dataset_indices(dataset, source_key, source_value)
+        
+    def _resolve_hvg_path(self) -> Path:
+        """
+        Risolve il percorso del file HVG seguendo la priorità:
+        1) hvg_index_path se assoluto o relativo
+        2) hvg_dir/top{K}_idx.npy se hvg_dir è dato
+        3) <data_files_path>/<dataset_name>/top{K}_idx.npy (default attuale)
+        """
+        # 1) se l'utente ha passato direttamente il file
+        if self.hvg_index_path:
+            p = Path(self.hvg_index_path)
+            if not p.is_absolute():
+                # se relativo, risolvi rispetto a data_files_path/dataset_name
+                p = Path(self.data_files_path) / self.dataset_name / p
+            return p
+
+        # 2) se ha passato una directory
+        if self.hvg_dir:
+            d = Path(self.hvg_dir)
+            file = f"top{self.hvg_top_k}_idx.npy"
+            return d / self.dataset_name / file if (d / self.dataset_name).exists() else d / file
+
+        # 3) default: data_files_path/dataset_name/topK_idx.npy
+        return Path(self.data_files_path) / self.dataset_name / f"top{self.hvg_top_k}_idx.npy"
 
     def _filter_dataset_indices(self, dataset, key, value):
         """
@@ -475,10 +611,23 @@ class ImageGexpDataModule(LightningDataModule):
         # self.dataset = load_from_disk(self.dataset_path)
         self.dataset = load_dataset(
             self.dataset_path,
-            name="human-lung-healthy-panel",
+            name=self.dataset_name,
             split="train" # change to "full"
         )
-        self.dataset = self.dataset.select_columns(SELECTION)
+        
+        # keep coords + an id we can fall back on
+        EXTRA = ["cell_coords", "name"]
+        # unisci SELECTION + EXTRA, ma rimuovi duplicati mantenendo l'ordine
+        cols = []
+        for c in SELECTION + [c for c in EXTRA if c in self.dataset.column_names]:
+            key = str(c) if not isinstance(c, str) else c
+            if key not in cols:
+                cols.append(key)
+
+        self.dataset = self.dataset.select_columns(cols)
+
+
+        #self.dataset = self.dataset.select_columns(SELECTION)
         self.dataset = self.dataset.select(self.idx_all)
         idx_train, idx_val, idx_test = self._split_indices()
         assert idx_train is not None, "Train split is not defined."

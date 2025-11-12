@@ -17,13 +17,14 @@ from hescape.models.image_models._ctranspath import _build_ctranspath_model
 from hescape.models.image_models._h0_mini import _build_h0_mini_model
 from hescape.models.image_models._utils import freeze_batch_norm_2d
 
+from hescape.models.image_models._pca import PCALinear
 
 class ImageEncoder(nn.Module):
     """ImageEncoder that wraps timm models."""
 
     def __init__(
         self,
-        model_name: Literal["ctranspath", "densenet", "uni", "optimus", "conch", "gigapath", "h0-mini"] | str,
+        model_name: Literal["ctranspath", "densenet", "uni", "optimus", "conch", "gigapath", "h0-mini", "inception", "inception_pca100"] | str,
         finetune: bool = False,
         embed_dim: int = -1,
         proj: str = "mlp",
@@ -116,6 +117,37 @@ class ImageEncoder(nn.Module):
 
             # total_blocks may differ, set it according to your needs
             total_blocks = 12  # Example
+        # === NEW: your hub Inception-v3 with 1000-class logits ===
+        elif model_name == "inception":
+            # mirror your script: keep classifier head (1000 logits)
+            trunk = torch.hub.load('pytorch/vision:v0.10.0', 'inception_v3', pretrained=True)
+            trunk.eval()
+            # expose feature dim to the head builder
+            trunk.num_features = 1000
+            total_blocks = 11
+            return trunk, total_blocks
+
+        # === NEW: same as above, but compress logits with PCA→100 before head ===
+        elif model_name == "inception_pca100":
+            base = torch.hub.load('pytorch/vision:v0.10.0', 'inception_v3', pretrained=True)
+            base.eval()
+            pca = PCALinear(
+                components_path=kwargs["pca_components_path"],
+                mean_path=kwargs["pca_mean_path"],
+            )
+            class InceptionLogitsWithPCA(nn.Module):
+                def __init__(self, b, p):
+                    super().__init__()
+                    self.base = b
+                    self.pca  = p
+                    self.num_features = 100
+                def forward(self, x):
+                    z = self.base(x)   # [B, 1000] logits
+                    return self.pca(z) # [B, 100]
+            trunk = InceptionLogitsWithPCA(base, pca)
+            total_blocks = 11
+            return trunk, total_blocks
+
 
         else:
             raise ValueError(f"Unknown model name: {model_name}")
@@ -181,6 +213,8 @@ class ImageEncoder(nn.Module):
             head_layers["transformer"] = transformer_encoder
             head_layers["linear"] = nn.Linear(in_features, embed_dim)
             # TBD
+        elif proj == "identity":
+            head_layers["identity"] = nn.Identity()
         else:
             raise ValueError(f"Unknown projection type: {proj}")
 
@@ -192,7 +226,8 @@ class ImageEncoder(nn.Module):
             param.requires_grad = False
         if freeze_bn_stats:
             freeze_batch_norm_2d(self.trunk)
-
+    '''
+    #original version
     def forward(self, x):
         """Forward pass."""
         features = {}
@@ -210,6 +245,28 @@ class ImageEncoder(nn.Module):
             x = x[:, 0, :]
 
         return x.contiguous()  # Ensure contiguous memory layout
+    '''
+    # hescape/models/image_models/__init__.py (your ImageEncoder)
+    def forward(self, x):
+        """Forward pass."""
+        # 1) ALWAYS extract features with the trunk
+        x = self.trunk(x)                      # <- ensures we never pass raw images forward
+
+        # models that output tokens
+        if self.model_name in ["conch", "h0-mini"]:
+            x = x[:, 0, :]
+
+        if self.proj == "transformer":
+            # if you genuinely need a transformer head, use forward_features here,
+            # but given trunk already ran, most cases can just do:
+            # tokens = self.trunk.forward_features(orig_x)  # if needed
+            # x = self.head(tokens); x = x[:, 0, :]
+            raise NotImplementedError("transformer head path needs tokens; not used here.")
+        else:
+            # 2) Apply head (Linear/MLP/Identity)
+            x = self.head(x)
+
+        return x.contiguous()
 
 
 if __name__ == "__main__":

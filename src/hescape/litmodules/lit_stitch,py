@@ -1,0 +1,107 @@
+# src/hescape/litmodules/lit_stitch.py
+import torch
+from pytorch_lightning import LightningModule
+from torch.optim import AdamW
+from hescape.losses.stitch_spatial import simclr_loss_func_spatial_label
+
+class LitStitch(LightningModule):
+    def __init__(self, img_enc, gene_enc, cfg):
+        super().__init__()
+        self.img_enc = img_enc
+        self.gene_enc = gene_enc
+        self.cfg = cfg
+        self.save_hyperparameters(ignore=["img_enc", "gene_enc", "cfg"])
+
+        # persistent categorical encoders
+        self._patient_to_int = {}   # maps f"{source}|{atlas}" -> int
+        self._next_pid = 0
+
+    def _encode_patients(self, sources, atlases, names):
+        """
+        Turn (source, atlas) into stable integer IDs; fallback to name prefix.
+        """
+        keys = []
+        for s, a, n in zip(sources, atlases, names):
+            s = str(s) if s is not None else ""
+            a = str(a) if a is not None else ""
+            key = f"{s}|{a}" if (s or a) else str(n).split()[0]
+            keys.append(key)
+
+        pids = []
+        for k in keys:
+            if k not in self._patient_to_int:
+                self._patient_to_int[k] = self._next_pid
+                self._next_pid += 1
+            pids.append(self._patient_to_int[k])
+        return torch.tensor(pids, dtype=torch.long, device=self.device)
+
+    def _coords3d_from_cell_coords(self, cell_coords):
+        """
+        cell_coords: list/array of [x, y] per sample
+        -> z-score x,y within batch, and append a zero 'slice' channel.
+        """
+        C = torch.as_tensor(cell_coords, dtype=torch.float32, device=self.device)  # [B,2]
+        if C.ndim == 1:
+            C = C.unsqueeze(0)
+        # batchwise standardization (robust and unitless)
+        mu = C.mean(dim=0, keepdim=True)
+        sd = C.std(dim=0, keepdim=True).clamp_min(1e-6)
+        Cn = (C - mu) / sd
+        z = torch.zeros((Cn.size(0), 1), dtype=Cn.dtype, device=Cn.device)  # dummy slice
+        coords3d = torch.cat([Cn, z], dim=1)  # [B,3]
+        return coords3d
+
+    def forward(self, batch):
+        # ---- 1) read schema fields exactly as in HESCAPE HF dataset ----
+        img   = batch["image"].float()        # [B,3,H,W]
+        gexp  = batch["gexp"].float()         # [B,G]
+        names = batch["name"]                 # list[str]
+        # optional metadata (may be None for some items):
+        sources = batch.get("source", [""] * len(names))
+        atlases = batch.get("atlas",  [""] * len(names))
+        cancer  = batch.get("cancer", None)   # bools
+        cell_xy = batch["cell_coords"]        # list[[x,y], ...]
+
+        # ---- 2) encoders (frozen inception + linear; gene topK + zscore handled in encoders) ----
+        z_img  = self.img_enc(img)            # [B,D]
+        z_gene = self.gene_enc(gexp)          # [B,D]
+
+        # ---- 3) coords → [x,y, slice] ----
+        coords3d = self._coords3d_from_cell_coords(cell_xy)  # [B,3]
+
+        # ---- 4) tumor label & patient IDs ----
+        if cancer is None:
+            # fallback: from diagnosis if 'cancer' missing; mark tumor if diagnosis == "Cancer"
+            diag = batch.get("diagnosis", ["None"] * len(names))
+            tumor_label = torch.tensor([1 if str(d).lower() == "cancer" else 0 for d in diag],
+                                       dtype=torch.long, device=self.device)
+        else:
+            tumor_label = torch.as_tensor(cancer, dtype=torch.long, device=self.device)
+
+        patient_ids = self._encode_patients(sources, atlases, names)  # [B]
+
+        # ---- 5) your spatial+tumor contrastive loss ----
+        loss = simclr_loss_func_spatial_label(
+            z_img, z_gene, coords3d, tumor_label, patient_ids,
+            temperature=self.cfg.model.stitch.temperature,
+            w_pair=self.cfg.model.stitch.w_pair,
+            w_tumor=self.cfg.model.stitch.w_tumor,
+            w_spatial=self.cfg.model.stitch.w_spatial,
+            sigma=self.cfg.model.stitch.sigma,
+            include_same_patient_in_tumor_positives=False,
+        )
+
+        return loss, z_img, z_gene
+
+    def training_step(self, batch, _):
+        loss, _, _ = self(batch)
+        self.log("train/loss", loss, prog_bar=True)
+        return loss
+
+    def validation_step(self, batch, _):
+        loss, zi, zg = self(batch)
+        self.log("val/loss", loss, prog_bar=True)
+        return {"z_img": zi.detach(), "z_gene": zg.detach()}
+
+    def configure_optimizers(self):
+        return AdamW(self.parameters(), lr=self.cfg.model.litmodule.optimizer.lr, weight_decay=1e-4)

@@ -1,0 +1,38 @@
+# experiments/stitch_conf/local_stitch.yaml
+defaults:
+  - _self_
+
+model:
+  litmodule:
+    embed_dim: 128
+    optimizer:
+      lr: 3e-4
+  stitch:
+    # STitch internals
+    input_dim_image: 2048
+    input_dim_transcriptome: 5000     # >= total genes; actual top-100 applied in preprocess
+    hidden_dim: 512
+    num_layers: 2
+    dropout: 0.1
+    # loss & spatial
+    temperature: 0.07
+    w_pair: 1.0
+    w_tumor: 0.5
+    w_spatial: 0.2
+    sigma: 0.8
+    # where compute_gene_stats writes its jsons
+    stats_dir: ${oc.env:STATS_DIR, "data/stitch_stats"}
+
+datamodule:
+  dataset_name: human-lung-healthy-panel   # override per panel
+  batch_size: 256
+  num_workers: 8
+
+training:
+  train: true
+  test: true
+  lightning:
+    trainer:
+      max_steps: 20000
+      devices: 1
+      strategy: auto

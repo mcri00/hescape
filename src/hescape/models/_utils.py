@@ -136,7 +136,8 @@ class SourceAwareContrastiveLoss(nn.Module):
 
         return {"contrastive_loss": loss} if output_dict else source_aware_loss
 
-
+'''
+#original version
 def print_trainable_parameters(name, model):
     """Prints the number of trainable parameters in the model."""
     trainable_params = 0
@@ -148,3 +149,46 @@ def print_trainable_parameters(name, model):
     print(
         f"{name} trainable params: {trainable_params / 1e6:.2f}M || all params: {all_param / 1e6:.2f}M || trainable%: {100 * trainable_params / all_param}"
     )
+'''
+def print_trainable_parameters(name: str, model: torch.nn.Module):
+    all_param = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    if all_param == 0:  # <- encoder "identity" (nessun parametro)
+        pct = 0.0
+        print(f"{name} trainable params: 0.00M || all params: 0.00M || trainable%: 0.0")
+        return
+
+    pct = 100.0 * trainable_params / all_param
+    print(f"{name} trainable params: {trainable_params / 1e6:.2f}M || all params: {all_param / 1e6:.2f}M || trainable%: {pct}")
+
+
+#new for simclr
+# utils/wrappers.py
+import torch
+import torch.nn as nn
+
+class ForceFP32(nn.Module):
+    def __init__(self, mod: nn.Module):
+        super().__init__()
+        self.mod = mod.float()
+        # ensure buffers are fp32 too
+        for b in self.mod.buffers():
+            if b.is_floating_point():
+                b.data = b.data.float()
+
+    def forward(self, *args, **kwargs):
+        # hard-disable autocast in the region of DRVI forward
+        with torch.autocast(device_type="cuda", enabled=False):
+            # cast all tensor args to float32
+            args = tuple(a.float() if isinstance(a, torch.Tensor) else a for a in args)
+            for k, v in list(kwargs.items()):
+                if isinstance(v, torch.Tensor):
+                    kwargs[k] = v.float()
+            out = self.mod(*args, **kwargs)
+            # make sure outputs are fp32
+            if isinstance(out, torch.Tensor):
+                return out.float()
+            if isinstance(out, (list, tuple)):
+                return type(out)(o.float() if isinstance(o, torch.Tensor) else o for o in out)
+            return out

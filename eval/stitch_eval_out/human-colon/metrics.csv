@@ -1,0 +1,3 @@
+panel,split,checkpoint,n_samples,hvg_k,input_dim_image,input_dim_transcriptome,i2g_R@1,i2g_R@5,i2g_R@10,g2i_R@1,g2i_R@5,g2i_R@10
+human-colon-panel,train,mlp_simclr_loss_func_spatial_reg_emb_pos_nosel_best_22.pth,5056,100,100,100,0.2887658178806305,0.5270965099334717,0.59375,0.3336629867553711,0.5512262582778931,0.6184731125831604
+human-colon-panel,train,mlp_simclr_loss_func_spatial_reg_emb_pos_nosel_best_22.pth,30016,100,100,100,0.10860874503850937,0.35367804765701294,0.46082088351249695,0.15881529450416565,0.37606608867645264,0.4617537260055542

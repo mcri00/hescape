@@ -1,0 +1,15 @@
+{
+  "panel": "human-multi-tissue-panel",
+  "split": "train",
+  "checkpoint": "mlp_simclr_loss_func_spatial_reg_emb_pos_nosel_best_22.pth",
+  "n_samples": 30016,
+  "hvg_k": 100,
+  "input_dim_image": 100,
+  "input_dim_transcriptome": 100,
+  "i2g_R@1": 0.159681499004364,
+  "i2g_R@5": 0.4482942521572113,
+  "i2g_R@10": 0.5394789576530457,
+  "g2i_R@1": 0.173374205827713,
+  "g2i_R@5": 0.4142124056816101,
+  "g2i_R@10": 0.5085954070091248
+}

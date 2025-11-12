@@ -1,0 +1,3 @@
+panel,split,checkpoint,n_samples,hvg_k,input_dim_image,input_dim_transcriptome,i2g_R@1,i2g_R@5,i2g_R@10,g2i_R@1,g2i_R@5,g2i_R@10
+human-multi-tissue-panel,train,mlp_simclr_loss_func_spatial_reg_emb_pos_nosel_best_22.pth,5056,100,100,100,0.40090981125831604,0.6190664768218994,0.6485363841056824,0.4303797483444214,0.5973101258277893,0.6224287748336792
+human-5k-panel,train,mlp_simclr_loss_func_spatial_reg_emb_pos_nosel_best_22.pth,30016,100,100,100,0.2196495234966278,0.5769922733306885,0.6594815850257874,0.26722413301467896,0.5869869589805603,0.6593483686447144

@@ -1,0 +1,27 @@
+panel: human-colon-panel
+split: train
+
+streaming: true
+hvg_fit_samples: 30000
+eval_max_samples: 30000
+stream_shuffle_buffer: 0
+
+train_cfg_data: /home/meteli/cristina/MUSE_sc/config/data_config_13.json
+train_cfg_model: /home/meteli/cristina/MUSE_sc/config/model_config_13.json
+
+
+checkpoint: /home/meteli/cristina/MUSE_sc/trainings/withEmbeddings/checkpoints/muse_best_13.pth  # your MUSE ckpt
+
+# Match your training extractor:
+use_inception: true          # or set custom flag to pick resnet18
+image_pca_dim: 100
+pca_fit_samples: 2000
+
+batch_size: 64
+num_workers: 8
+pin_memory: true
+img_size: 299
+img_mean: [0.5, 0.5, 0.5]
+img_std:  [0.5, 0.5, 0.5]
+
+out_dir: /home/meteli/cristina/hescape/eval/muse_eval_out/human-colon

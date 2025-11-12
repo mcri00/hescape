@@ -1,0 +1,13 @@
+panel: human-multi-tissue-panel
+split: train
+test_ids_csv: /home/meteli/cristina/hescape/benchmark/test_sets_ID/human-multi_tissue-test.csv
+out_root: /home/meteli/cristina/hescape/_cache_exports
+pca_dim: 100
+hvg_k: 100
+device: cuda
+id_field: name
+batch_size: 64
+log1p_gene: true
+stop_after_misses: 1000
+min_rows_per_id: 0
+max_rows_per_id: 0
